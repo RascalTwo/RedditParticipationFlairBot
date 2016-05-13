@@ -1,0 +1,78 @@
+{
+    "client_id": "",
+    "client_secret": "",
+    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two",
+    "username": "",
+    "password": "",
+    "subreddit": "IndianFood",
+    "check_rate": 60,
+    "rules_rate": 604800,
+    "rules": [
+        {
+            "name": "Casual Reader",
+            "type": "comment",
+            "text": "",
+            "class": "chai",
+            "min": 5,
+            "max": 10,
+            "weight": 0
+        },
+        {
+            "name": "Casual Commentator",
+            "type": "comment",
+            "text": "",
+            "class": "t1",
+            "min": 11,
+            "max": 20,
+            "weight": 1
+        },
+        {
+            "name": "Regular Commentator",
+            "type": "comment",
+            "text": "",
+            "class": "t2",
+            "min": 21,
+            "max": 30,
+            "weight": 2
+        },
+        {
+            "name": "Veteran Commentator",
+            "type": "comment",
+            "text": "",
+            "class": "t3",
+            "min": 32,
+            "max": 9000,
+            "weight": 3
+        },
+        {
+            "name": "Casual Contributor",
+            "type": "post",
+            "text": "",
+            "class": "samosa",
+            "min": 1,
+            "max": 5,
+            "weight": 1.5
+        },
+        {
+            "name": "Regular Contributor",
+            "type": "post",
+            "text": "",
+            "class": "oc",
+            "min": 6,
+            "max": 10,
+            "weight": 2.5
+        },
+        {
+            "name": "Veteran Contributor",
+            "type": "post",
+            "text": "",
+            "class": "ocreg",
+            "min": 11,
+            "max": 9000,
+            "weight": 3.5
+        }
+    ],
+    "ignored_users": [
+        "AutoModerator"
+    ]
+}
