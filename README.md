@@ -1,6 +1,6 @@
 # Reddit /r/IndianFood Flair Bot
 
-Made for /u/asliyoyo to set the flairs of users on /r/RottenTomatoes based on the ammount of posts and comments made by them in a range of time..
+Made for /u/asliyoyo to set the flairs of users on /r/RottenTomatoes based on the ammount of posts and comments made by them in a range of time.
 
 Requires `username`, `password`, `client_id`, and `client_secret` for the Reddit account the bot will run under.
 
@@ -30,8 +30,6 @@ You'll then see the ID and secret of the application. You enter these in the `cl
 ![app-details](https://i.imgur.com/hydS5CT.png)
 
 You will also need to fill out the empty fields in the `config.json` accordinly. You should have text before the forward slash & version number in the `user_agent` field be the same as the app name you created.
-
-![config-filled-out](https://i.imgur.com/LKw0Kq0.png)
 
 That's all the setup required for the app. You can now exeute the script and it should work.
 
