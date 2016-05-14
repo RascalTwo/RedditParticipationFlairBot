@@ -1,10 +1,10 @@
-# Reddit /r/RottenTomatoes Top Box Office Poster
+# Reddit /r/IndianFood Flair Bot
 
-Made for /u/MasterLawlz to post all movies that enter the Top Box office and have been out for at least one weekend to /r/RottenTomatoes.
+Made for /u/asliyoyo to set the flairs of users on /r/RottenTomatoes based on the ammount of posts and comments made by them in a range of time..
 
 Requires `username`, `password`, `client_id`, and `client_secret` for the Reddit account the bot will run under.
 
-Also requires the account to have moderator status in the subreddit of which the sidebar will be updated, as the bot must approve it's own posts.
+Also requires the account to have moderator status in the subreddit of which the sidebar will be updated, as the bot assigns flairs..
 
 # Dependencies
 
@@ -43,29 +43,26 @@ The configuration file - `config.json` looks like this:
 {
     "client_id": "",
     "client_secret": "",
-    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two for /u/MasterLawlz running under /u/tomatometerbot at /r/RottenTomatoes",
+    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two for /u/asliyoyo running under /u/{BOT_NAME} at /r/IndianFood",
     "username": "",
     "password": "",
-    "subreddit": "RottenTomatoes",
-    "check_rate": 3600,
-    "post_title_format": "{movie_title} - {tomato_score}%",
-    "post_flairs": {
-        "enabled": true,
-        "flairs": [
-            {
-                "min": 0,
-                "max": 59,
-                "text": "Rotten",
-                "class": "rotten"
-            },
-            {
-                "min": 60,
-                "max": 100,
-                "text": "Fresh",
-                "class": "fresh"
-            }
-        ]
-    }
+    "subreddit": "IndianFood",
+    "check_rate": 60,
+    "rules_rate": 604800,
+    "rules": [
+        {
+            "name": "Casual Reader",
+            "type": "comment",
+            "text": "",
+            "class": "chai",
+            "min": 5,
+            "max": 10,
+            "weight": 0
+        }
+    ],
+    "ignored_users": [
+        "AutoModerator"
+    ]
 }
 ```
 
@@ -75,44 +72,31 @@ The configuration file - `config.json` looks like this:
 - `username` is the username of the Reddit account the bot will run under.
 - `password` is the password of the Reddit account the bot will run under.
 - `subreddit` is the name of the subreddit sidebar that's being updated.
-- `check_rate` is the rate - in seconds - that the bot will check and make posts.
-- `post_title_format` is the format of which the post titles are. `{movie_title}` gets replaced with the title of the movie, and `{tomato_score}` gets replaced with the rotten tomatoe score for that movie.
-- `post_flairs`
-    - `enabled` - Determines if posts are even given flairs.
-    - `flairs` - List of all possible flairs.
-
+- `check_rate` is the rate of time - in seconds - that the bot will check for new comments and posts, and calculate the flairs for the new authors.
+- `rules_rate` is the rate of time - in seconds - that the rules are enforeced by. It is defaulty set to one week, meaning that users posts and comments are counted a week into the past.
+- `rules` is the list of actual flair rules.
+- `ignored_users` is a list of users who to ignore. These users will never be counted nor have their flairs changed.
 *****
 
-A flair has four properties:
+A rule has seven properties:
 
-- `min` is the minimum value the tomato score can be for the flair to be applied.
-- `max` is the maximum value the tomato score can be for the flair to be applied.
-- `text` is the text of the flair assigned to the post.
-- `class` is the class of the flair assigned to the post.
+- `name` is the name of the rule. It has no impact asside from organizing the rules while configuring
+- `type` can be either `comment` or `post`, and determines if the flairs is based on the number of posts or comments made in `rules_rate`.
+- `text` is the text label of the flair that would be set.
+- `class` is the css class of the flair that would be set.
+- `min` is the minimum amount of posts/comments required for the user to make to obtain this flair.
+- `max` is the maximum amount of posts/comments required for the user to make to obtain this flair.
+- `weight` is more of an internal setting. It is intended to be used when the user can be given two applicable flairs, the flair with the higher weight is the one the user gets.
 
-The `text` and `class` must match that of your alreay created flairs on the subreddit. It's not making a flair with these two attributes, it's getting the flair from the subreddit with these two attributes.
+Weight Example:
 
-Be careful, they are case sensitive.
+> A user has made enough posts and comments to be applicable for both `Casual Commentator` and `Casual Contributor`.
 
-## Subreddit
+> Which flair should the user have?
 
-You need to do two things to the subreddit to get the flairs to work. You can ignore this if you have `post_flairs` `enabled` set to false.
+> Well `Casual Commentator` has a `weight` of `1`, while `Casual Contributor` has a weight of `1.5`.
 
-The first of which is the stylesheet.
-
-![sample-stylesheet](https://i.imgur.com/stNobTN.png)
-
-You need to simply add your flairs. This technically is not required, but that's how you do it.
-
-Next you need to define the flairs in the flair section:
-
-![flairs-set](https://i.imgur.com/qBQHa25.png)
-
-You're *defining* the text and css class here. You need to match the flair `text` and `class` to these values, not the other way around.
-
-Be careful, they are case sensitive.
-
-*****
+> The user gets the `Casual Contributor` flair.
 
 # Explanation
 
@@ -120,19 +104,13 @@ When the bot is first created it loads the configuration data from the `config.j
 
 This access token is automatically refreshed, so the bot can run for a very long time.
 
-Every minute it outputs a message stating it's uptime. It also checks if it's time to check for new valid movies. If it it, then it scrapes the backend of the rotten tomatoes API - `https://d2a5cgar23scu2.cloudfront.net/api/private/v1.0/m/list/find?page=1&limit=10&type=in-theaters&sortBy=popularity`.
-
-I won't bore you by explaining every attribute of the GET request, it's human readable.
+Every minute it outputs a message stating it's uptime. It also checks if it's time to recalculate the flairs of the newest authors.
 
 *****
 
-The top ten movies fetched are cycled through, and each is checked to see if it's in the `data.json` file. The entire premiere date is then fetched from the movie page, and it is calculated if two weekends have passed since it's premiere.
+If it it, then it counts all the newest authors of `new` and `comments`. Each author has all their posts and comments counted.
 
-If so, then the movie is added to the list of movies to post.
-
-*****
-
-For every movie that is approved to be posted, they're first posted. Then the flair is calculated based on the the tomato score, and the flair is assigned to the post.
+The new flairs for the authors are calculated based on the number of posts and comments, and then the flairs are changed.
 
 *****
 
@@ -141,5 +119,3 @@ For every movie that is approved to be posted, they're first posted. Then the fl
 > I may do some of these, I may do none of these. Depends on how worth-it said feature would be.
 
 - Convert to [PRAW](https://praw.readthedocs.io/en/stable/)
-
-- Logging to file.
