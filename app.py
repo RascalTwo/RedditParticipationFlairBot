@@ -24,6 +24,8 @@
 import json
 import time
 import re
+import logging
+import logging.handlers
 import requests
 from datetime import datetime
 from datetime import timedelta
@@ -131,19 +133,44 @@ class IndianFoodFlairBot(object):
                              data=post_data,
                              headers=self._headers(False))
 
+    @handle_response("json")
+    def _get_listing(self, url, count, after=""):
+        return requests.get("{}?count={}&after={}".format(url, count, after),
+                            headers=self._headers())
+
+    def _get_all_listing_content(self, url, matching, oldest):
+        content = []
+        count = 0
+        after = ""
+        continue_listing = True
+        while continue_listing:
+            listing_data = self._get_listing(url, count, after)["data"]
+            for listing in listing_data["children"]:
+                if listing["data"]["created_utc"] < oldest:
+                    continue_listing = False
+                    break
+                if listing["data"]["subreddit"].lower() != self.config["subreddit"].lower():
+                    continue
+                content.append(listing)
+            if listing_data["after"] is None:
+                continue_listing = False
+            count += 25
+            after = listing_data["after"]
+        return content
+
     def refresh_token(self):
         """Attempt to refresh the access token."""
         try:
             self.token = self._get_token()
         except (HTTPException, RedditAPIException) as token_exception:
             self.token = None
-            print("Could not get access token from the Reddit API.\n"
-                  "This can be caused by mutiple things, such as:\n"
-                  "  Reddit not being accessable\n"
-                  "  Username and/or password being incorrect.\n"
-                  "  'client_id' and/or 'client_secret' being incorrect.\n"
-                  "  Applicaiton on Reddit not created as a 'script'.\n\n"
-                  "Raw Error: {}".format(token_exception))
+            logger.critical("Could not get access token from the Reddit API.")
+            logger.critical("This can be caused by mutiple things, such as:")
+            logger.critical("  Reddit not being accessable")
+            logger.critical("  Username and/or password being incorrect.")
+            logger.critical("  'client_id' and/or 'client_secret' being incorrect.")
+            logger.critical("  Applicaiton on Reddit not created as a 'script'.")
+            logger.critical("Raw Error: {}".format(token_exception))
 
     def run(self):
         """Start the loop for the bot to run in."""
@@ -152,46 +179,44 @@ class IndianFoodFlairBot(object):
         uptime = 0
 
         while True:
-            print("Uptime: {}s".format(uptime))
+            logger.info("Uptime: {}s".format(uptime))
 
             if self.token["expires_in"] <= 60:
-                print("Refreshing access token...", end="")
+                logger.info("Refreshing access token...")
                 self.refresh_token()
-                print("Access token refreshed.")
+                logger.info("Access token refreshed.")
 
             if uptime % self.config["check_rate"] == 0:
                 try:
-                    print("Updating...", end="")
+                    logger.info("Processing...")
 
-                    users = []
-                    flairs = []
-
+                    csv = ""
                     for author in self.get_newest_authors():
-                        print(author)
+                        csv += "\n"
+
                         counts = self.get_user_activity_counts(author)
-                        print(counts)
                         flair = self.get_flair_for_user(author, counts)
-                        print(flair)
-                        users.append(author)
+
                         if flair is None:
-                            flairs.append({"text": "", "class": ""})
-                        else:
-                            flairs.append(flair)
-                        #flair_options = self.get_flair_options(author)
-                        #print(flair_options)
-                        #flair = self.append_id(flair, flair_options)
-                        #print(flair)
-                        #print(self.set_user_flair(author, flair))
-                    print(self.set_user_flairs(users, flairs))
+                            flair = {"text": "", "class": ""}
+
+                        csv += "{},{},{}".format(author,
+                                                 flair["text"],
+                                                 flair["class"])
+
+                    logger.info("Updating {} users.".format(len(csv.split("\n"))-1))
+
+                    if csv != "":
+                        self.set_user_flairs(csv)
 
                     if len(self.processed) > 200:
                         self.processed = self.processed[99:-1]
 
-                    print("Updated.")
+                    logger.info("Finished.")
 
                 except(HTTPException, RedditAPIException) as exception:
-                    print("There was an error making a post.\n"
-                          "{}".format(exception))
+                    logger.info("There was an error.")
+                    logger.info("{}".format(exception))
 
             uptime += 60
             self.token["expires_in"] -= 60
@@ -223,31 +248,6 @@ class IndianFoodFlairBot(object):
 
         return authors
 
-    @handle_response("json")
-    def _get_listing(self, url, count, after=""):
-        return requests.get("{}?count={}&after={}".format(url, count, after),
-                            headers=self._headers())
-
-    def _get_all_listing_content(self, url, matching, oldest):
-        content = []
-        count = 0
-        after = ""
-        continue_listing = True
-        while continue_listing:
-            listing_data = self._get_listing(url, count, after)["data"]
-            for listing in listing_data["children"]:
-                if listing["data"]["created_utc"] < oldest:
-                    continue_listing = False
-                    break
-                if listing["data"]["subreddit"].lower() != self.config["subreddit"].lower():
-                    continue
-                content.append(listing)
-            if listing_data["after"] is None:
-                continue_listing = False
-            count += 25
-            after = listing_data["after"]
-        return content
-
     def get_user_activity_counts(self, username):
         activities = {
             "comment": 0,
@@ -264,16 +264,8 @@ class IndianFoodFlairBot(object):
 
         return activities
 
-
     @handle_response("json")
-    def set_user_flairs(self, users, flairs):
-        csv = ""
-        for x in range(len(users)):
-            csv += "{},{},{}\n".format(users[x],
-                                       flairs[x]["text"],
-                                       flairs[x]["class"])
-        csv = "\n".join(csv.split("\n")[0:-1])
-        print(csv)
+    def set_user_flairs(self, csv):
         post_data = {
             "flair_csv": csv
         }
@@ -287,6 +279,7 @@ class IndianFoodFlairBot(object):
             "comment": None,
             "post": None
         }
+
         for rule in self.config["rules"]:
             if rule["min"] <= counts[rule["type"]] and counts[rule["type"]] <= rule["max"]:
                 choices[rule["type"]] = rule
@@ -297,56 +290,20 @@ class IndianFoodFlairBot(object):
         if choices["comment"] is None:
             return choices["post"]
 
-        print("{} vs {}".format(choices["comment"]["weight"], choices["post"]["weight"]))
-
         return choices["comment"] if choices["comment"]["weight"] > choices["post"]["weight"] else choices["post"]
 
 
-
-
-    #Not Needed
-    @handle_response("json")
-    def get_flair_options(self, username):
-        post_data = {
-            "name": username
-        }
-        return requests.post("https://oauth.reddit.com/r/{}/api/flairselector"
-                             .format(self.config["subreddit"]),
-                             data=post_data,
-                             headers=self._headers())
-    # Not needed
-    @handle_response("json")
-    def set_user_flair(self, username, flair):
-        post_data = {
-            "api_type": "json",
-            "flair_template_id": flair["id"],
-            "name": username,
-            "text": flair["text"]
-        }
-        return requests.post("https://oauth.reddit.com/r/{}/api/selectflair"
-                             .format(self.config["subreddit"]),
-                             data=post_data,
-                             headers=self._headers())
-    # not Needed
-    def append_id(self, flair, flair_options):
-        for official_flair in flair_options["choices"]:
-            if official_flair["flair_text"] == flair["text"]:
-                if "flair-" in official_flair["flair_css_class"]:
-                    official_flair["flair_css_class"] = official_flair["flair_css_class"].split("flair-")[1]
-                if official_flair["flair_css_class"] == flair["class"]:
-                    flair["id"] = official_flair["flair_template_id"]
-
-        try:
-            flair["id"]
-            return flair
-        except Exception as exception:
-            print("Something went wrong.\n"
-                  "Attempted to get the flair id.\n"
-                  "Was unable to find a flair with text of '{}' and class of '{}'\n\n"
-                  "Raw Error: {}"
-                  .format(flair["text"],
-                          flair["class"],
-                          exception))
-
 if __name__ == "__main__":
+    logging_format = logging.Formatter("[%(asctime)s] [%(levelname)s]: %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    file_logger = logging.handlers.TimedRotatingFileHandler("logs/output.log", when="midnight", interval=1)
+    file_logger.setFormatter(logging_format)
+    logger.addHandler(file_logger)
+
+    console_logger = logging.StreamHandler()
+    console_logger.setFormatter(logging_format)
+    logger.addHandler(console_logger)
+
     IndianFoodFlairBot().run()
