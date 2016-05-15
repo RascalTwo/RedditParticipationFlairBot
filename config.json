@@ -1,10 +1,10 @@
 {
     "client_id": "",
     "client_secret": "",
-    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two for /u/asliyoyo running under /u/{BOT_NAME} at /r/IndianFood",
+    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two running under /u/{BOT_NAME} at /r/{SUBREDDIT_NAME}",
     "username": "",
     "password": "",
-    "subreddit": "IndianFood",
+    "subreddit": "{SUBREDDIT_NAME}",
     "check_rate": 60,
     "rules_rate": 604800,
     "rules": [

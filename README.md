@@ -1,21 +1,21 @@
-# Reddit /r/IndianFood Flair Bot
+# Reddit Participation Flair Bot
 
-Made for /u/asliyoyo to set the flairs of users on /r/IndianFood based on the ammount of posts and comments made by them in a range of time.
+Set the flairs of users based on the amount of posts and comments made by them in a range of time.
 
 Requires `username`, `password`, `client_id`, and `client_secret` for the Reddit account the bot will run under.
 
 Also requires the account to have moderator status in the subreddit of which the sidebar will be updated, as the bot assigns flairs..
 
-# Dependencies
+## Dependencies
 
 - [Python 3](https://www.python.org/download/releases/3.0/)
 - [Requests](http://docs.python-requests.org/en/master/)
 
 You can have the dependencies automatically installed by executing `pip install -r requirements.txt`, although there is only one dependency. You will obviously have to obtain Python and pip manually.
 
-# Setup
+## Setup
 
-## Reddit Account
+### Reddit Account
 
 Go the `Apps` tab of your reddit account preferences.
 
@@ -33,7 +33,7 @@ You will also need to fill out the empty fields in the `config.json` accordinly.
 
 That's all the setup required for the app. You can now exeute the script and it should work.
 
-## Configuration
+### Configuration
 
 The configuration file - `config.json` looks like this:
 
@@ -41,7 +41,7 @@ The configuration file - `config.json` looks like this:
 {
     "client_id": "",
     "client_secret": "",
-    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two for /u/asliyoyo running under /u/{BOT_NAME} at /r/IndianFood",
+    "user_agent": "SomethingUnique/1.0 by /u/Rascal_Two running under /u/{BOT_NAME} at /r/{SUBREDDIT_NAME}",
     "username": "",
     "password": "",
     "subreddit": "IndianFood",
@@ -74,6 +74,7 @@ The configuration file - `config.json` looks like this:
 - `rules_rate` is the rate of time - in seconds - that the rules are enforeced by. It is defaulty set to one week, meaning that users posts and comments are counted a week into the past.
 - `rules` is the list of actual flair rules.
 - `ignored_users` is a list of users who to ignore. These users will never be counted nor have their flairs changed.
+
 *****
 
 A rule has seven properties:
@@ -96,7 +97,7 @@ Weight Example:
 
 > The user gets the `Casual Contributor` flair.
 
-# Explanation
+## Explanation
 
 When the bot is first created it loads the configuration data from the `config.json` file. It then sends the `username`, `password`, `client_id`, and `client_secret` to the Reddit API to get a access token. This access token lasts 60 minutes, and is used to do actions as the reddit account.
 
@@ -109,11 +110,3 @@ Every minute it outputs a message stating it's uptime. It also checks if it's ti
 If it it, then it counts all the newest authors of `new` and `comments`. Each author has all their posts and comments counted.
 
 The new flairs for the authors are calculated based on the number of posts and comments, and then the flairs are changed.
-
-*****
-
-# TODO
-
-> I may do some of these, I may do none of these. Depends on how worth-it said feature would be.
-
-- Convert to [PRAW](https://praw.readthedocs.io/en/stable/)
