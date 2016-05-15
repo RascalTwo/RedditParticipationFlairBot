@@ -1,6 +1,6 @@
 # Reddit /r/IndianFood Flair Bot
 
-Made for /u/asliyoyo to set the flairs of users on /r/RottenTomatoes based on the ammount of posts and comments made by them in a range of time.
+Made for /u/asliyoyo to set the flairs of users on /r/IndianFood based on the ammount of posts and comments made by them in a range of time.
 
 Requires `username`, `password`, `client_id`, and `client_secret` for the Reddit account the bot will run under.
 
